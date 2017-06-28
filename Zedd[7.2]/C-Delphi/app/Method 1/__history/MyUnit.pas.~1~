@@ -1,0 +1,17 @@
+unit MyUnit;
+
+interface
+
+type
+  TIntPtr = ^Integer;
+
+procedure fill_array(arr: TIntPtr; const size: Integer) cdecl;
+
+implementation
+
+const
+  DllSource = 'C:\Users\BINH\Desktop\C-Delphi\app\Method 1\cdel.dll';
+
+procedure fill_array; external DllSource;
+
+end.

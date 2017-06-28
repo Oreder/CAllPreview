@@ -1,0 +1,34 @@
+Dr. Memory version 1.9.0 build 0 built on Aug 28 2015 22:56:18
+Dr. Memory results for pid 348: "main.exe"
+Application cmdline: "main.exe -p a.txt b.txt c.txt"
+Recorded 110 suppression(s) from default C:\Program Files (x86)\Dr. Memory\bin\suppress-default.txt
+
+Error #1: INVALID HEAP ARGUMENT to free
+# 0 replace_free               [d:\drmemory_package\common\alloc_replace.c:2514]
+# 1 free_matrix                [main.c:86]
+# 2 main                       [main.c:42]
+
+Error #2: INVALID HEAP ARGUMENT to free
+# 0 replace_free               [d:\drmemory_package\common\alloc_replace.c:2514]
+# 1 free_matrix                [main.c:86]
+# 2 main                       [main.c:42]
+
+===========================================================================
+FINAL SUMMARY:
+
+DUPLICATE ERROR COUNTS:
+	Error #   1:      2
+	Error #   2:      2
+
+SUPPRESSIONS USED:
+
+ERRORS FOUND:
+      0 unique,     0 total unaddressable access(es)
+      0 unique,     0 total uninitialized access(es)
+      2 unique,     4 total invalid heap argument(s)
+      0 unique,     0 total GDI usage error(s)
+      0 unique,     0 total handle leak(s)
+      0 unique,     0 total warning(s)
+      0 unique,     0 total,      0 byte(s) of leak(s)
+      0 unique,     0 total,      0 byte(s) of possible leak(s)
+Details: C:\Zedd\temp\DrMemory-main.exe.348.000\results.txt

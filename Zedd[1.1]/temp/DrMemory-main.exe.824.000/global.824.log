@@ -1,0 +1,61 @@
+Dr. Memory version 1.9.0 build 0 built on Aug 28 2015 22:56:18
+start time: 3635699:10:10.614 == 11:10:10.614 10/05/2015
+Recorded 110 suppression(s) from default C:\Program Files (x86)\Dr. Memory\bin\suppress-default.txt
+new thread #0 id=6476
+
+module load event: "main.exe" 0x00400000-0x00427000 modid: 1 C:\Zedd\main.exe
+
+module load event: "dynamorio.dll" 0x6f7a0000-0x6f8fa000 modid: 2 C:\Program Files (x86)\Dr. Memory\dynamorio\lib32\release\dynamorio.dll
+
+module load event: "drmemorylib.dll" 0x73800000-0x739f6000 modid: 3 C:\Program Files (x86)\Dr. Memory\bin\release\drmemorylib.dll
+
+module load event: "KERNEL32.dll" 0x76f30000-0x77020000 modid: 4 C:\WINDOWS\SYSTEM32\KERNEL32.DLL
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\KERNEL32.DLL
+
+module load event: "msvcrt.dll" 0x771f0000-0x772ae000 modid: 5 C:\WINDOWS\SYSTEM32\msvcrt.dll
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new == new[] => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+
+module load event: "KERNELBASE.dll" 0x774e0000-0x77656000 modid: 6 C:\WINDOWS\SYSTEM32\KERNELBASE.dll
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\KERNELBASE.dll
+
+module load event: "ntdll.dll" 0x77c70000-0x77de9000 modid: 7 C:\WINDOWS\SYSTEM32\ntdll.dll
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\ntdll.dll
+WARNING: unhandled system calls found
+
+DUPLICATE ERROR COUNTS:
+
+SUPPRESSIONS USED:
+	     1x: default i#960 CRT mismatch
+	     2x (leaked      41 bytes): default i#599 mingw un-freed alloc A
+
+NO ERRORS FOUND:
+      0 unique,     0 total unaddressable access(es)
+      0 unique,     0 total uninitialized access(es)
+      0 unique,     0 total invalid heap argument(s)
+      0 unique,     0 total GDI usage error(s)
+      0 unique,     0 total handle leak(s)
+      0 unique,     0 total warning(s)
+      0 unique,     0 total,      0 byte(s) of leak(s)
+      0 unique,     0 total,      0 byte(s) of possible leak(s)
+Details: C:\Zedd\temp\DrMemory-main.exe.824.000\results.txt
+
+DUPLICATE POTENTIAL ERROR COUNTS:
+
+NO POTENTIAL ERRORS FOUND:
+      0 unique,     0 total potential unaddressable access(es)
+      0 unique,     0 total potential uninitialized access(es)
+      0 unique,     0 total potential invalid heap argument(s)
+      0 unique,     0 total potential GDI usage error(s)
+      0 unique,     0 total potential handle leak(s)
+      0 unique,     0 total potential warning(s)
+      0 unique,     0 total,      0 byte(s) of potential leak(s)
+      0 unique,     0 total,      0 byte(s) of potential possible leak(s)
+Details: C:\Zedd\temp\DrMemory-main.exe.824.000\potential_errors.txt
+Exiting @0:00:00.766 in thread 6476
+LOG END

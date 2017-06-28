@@ -1,0 +1,30 @@
+# File for suppressing errors found in pid 348: "main.exe"
+
+# Suppression for Error #1
+INVALID HEAP ARGUMENT
+name=Error #1 (update to meaningful name)
+drmemorylib.dll!replace_free
+main.exe!free_matrix
+main.exe!main
+
+## Mod+offs-style suppression for Error #1:
+INVALID HEAP ARGUMENT
+name=Error #1 (update to meaningful name)
+<drmemorylib.dll+0x33b70>
+<main.exe+0x17db>
+<main.exe+0x15b1>
+
+# Suppression for Error #2
+INVALID HEAP ARGUMENT
+name=Error #2 (update to meaningful name)
+drmemorylib.dll!replace_free
+main.exe!free_matrix
+main.exe!main
+
+## Mod+offs-style suppression for Error #2:
+INVALID HEAP ARGUMENT
+name=Error #2 (update to meaningful name)
+<drmemorylib.dll+0x33b70>
+<main.exe+0x17db>
+<main.exe+0x15c5>
+

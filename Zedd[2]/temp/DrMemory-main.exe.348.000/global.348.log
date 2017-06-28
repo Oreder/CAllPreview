@@ -1,0 +1,72 @@
+Dr. Memory version 1.9.0 build 0 built on Aug 28 2015 22:56:18
+start time: 3636356:21:10.374 == 20:21:10.374 11/01/2015
+Recorded 110 suppression(s) from default C:\Program Files (x86)\Dr. Memory\bin\suppress-default.txt
+new thread #0 id=4100
+
+module load event: "main.exe" 0x00400000-0x00428000 modid: 1 C:\Zedd\main.exe
+
+module load event: "dynamorio.dll" 0x68d00000-0x68e5a000 modid: 2 C:\Program Files (x86)\Dr. Memory\dynamorio\lib32\release\dynamorio.dll
+
+module load event: "drmemorylib.dll" 0x73800000-0x739f6000 modid: 3 C:\Program Files (x86)\Dr. Memory\bin\release\drmemorylib.dll
+
+module load event: "msvcrt.dll" 0x743a0000-0x7445e000 modid: 4 C:\WINDOWS\SYSTEM32\msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new == new[] => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+
+module load event: "KERNEL32.dll" 0x75a40000-0x75b30000 modid: 5 C:\WINDOWS\SYSTEM32\KERNEL32.DLL
+
+module load event: "KERNELBASE.dll" 0x76b30000-0x76ca6000 modid: 6 C:\WINDOWS\SYSTEM32\KERNELBASE.dll
+
+module load event: "ntdll.dll" 0x77210000-0x77389000 modid: 7 C:\WINDOWS\SYSTEM32\ntdll.dll
+WARNING: unhandled system calls found
+
+Error #1: INVALID HEAP ARGUMENT to free
+# 0 replace_free    [d:\drmemory_package\common\alloc_replace.c:2514] (0x73833b70 <drmemorylib.dll+0x33b70>) modid:3
+# 1 free_matrix [main.c:86] (0x004017db <main.exe+0x17db>) modid:1
+# 2 main     [main.c:42] (0x004015b1 <main.exe+0x15b1>) modid:1
+	error end
+
+Error #2: INVALID HEAP ARGUMENT to free
+# 0 replace_free    [d:\drmemory_package\common\alloc_replace.c:2514] (0x73833b70 <drmemorylib.dll+0x33b70>) modid:3
+# 1 free_matrix [main.c:86] (0x004017db <main.exe+0x17db>) modid:1
+# 2 main     [main.c:42] (0x004015c5 <main.exe+0x15c5>) modid:1
+	error end
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\KERNEL32.DLL
+
+DUPLICATE ERROR COUNTS:
+	Error #   1:      2
+	Error #   2:      2
+
+SUPPRESSIONS USED:
+	     1x (leaked      59 bytes): default i#781: argv[] possible leak in mingw CRT
+	     5x (leaked     312 bytes): default i#599 MSCRT un-freed alloc C
+
+ERRORS FOUND:
+      0 unique,     0 total unaddressable access(es)
+      0 unique,     0 total uninitialized access(es)
+      2 unique,     4 total invalid heap argument(s)
+      0 unique,     0 total GDI usage error(s)
+      0 unique,     0 total handle leak(s)
+      0 unique,     0 total warning(s)
+      0 unique,     0 total,      0 byte(s) of leak(s)
+      0 unique,     0 total,      0 byte(s) of possible leak(s)
+Details: C:\Zedd\temp\DrMemory-main.exe.348.000\results.txt
+
+DUPLICATE POTENTIAL ERROR COUNTS:
+
+POTENTIAL ERRORS FOUND:
+      0 unique,     0 total potential unaddressable access(es)
+      0 unique,     0 total potential uninitialized access(es)
+      0 unique,     0 total potential invalid heap argument(s)
+      0 unique,     0 total potential GDI usage error(s)
+      0 unique,     0 total potential handle leak(s)
+      0 unique,     0 total potential warning(s)
+      0 unique,     0 total,      0 byte(s) of potential leak(s)
+      0 unique,     0 total,      0 byte(s) of potential possible leak(s)
+Details: C:\Zedd\temp\DrMemory-main.exe.348.000\potential_errors.txt
+Exiting @0:00:00.620 in thread 4100
+LOG END

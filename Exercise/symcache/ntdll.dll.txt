@@ -1,0 +1,91 @@
+Dr. Memory symbol cache version 13
+      1809,762880,1066798021523865602,1066798021523865602,797988,1111717780,983040
+0
+memcmp,0x10b3f
+strcspn,0x11463
+mallopt,0x0
+malloc,0x0
+memmove,0x10f3d
+strcpy,0x112dd
+strspn,0x1182b
+wcsstr,0x353fc
+stpcpy,0x0
+mallinfo,0x0
+wmemset,0x0
+memchr,0x10a90
+cfree,0x0
+wcscpy,0x2215a
+strstr,0x1ef12
+memset,0x1127d
+calloc,0x0
+strrchr,0x117fe
+strncmp,0x11661
+strncpy,0x1169a
+strncat,0x1152a
+strcat,0x112ed
+wcslen,0x1f7be
+malloc_set_state,0x0
+malloc_get_state,0x0
+Concurrency::details::Security::EncodePointer,0x0
+wcsncmp,0x38c09
+wcsrchr,0x2217e
+wmemcpy,0x0
+wmemchr,0x0
+wmemcmp,0x0
+operator delete[] nothrow,0x0
+operator delete[],0x0
+strlen,0x114a7
+wcscmp,0x388e1
+strchr,0x1efa7
+memcpy,0x10bf7
+realloc,0x0
+strcmp,0x113db
+wcschr,0x21c38
+strnlen,0x0
+_msize,0x0
+RtlUnlockHeap,0x29acb
+operator new,0x0
+RtlCreateHeap,0x2f479
+RtlValidateHeap,0x42d14
+RtlDestroyHeap,0x340f3
+RtlAllocateHeap,0x1f65e
+RtlQueryHeapInformation,0x72d57
+RtlCompactHeap,0x3816c
+RtlSetHeapInformation,0x37ed9
+RtlMultipleAllocateHeap,0x72da4
+RtlMultipleFreeHeap,0x72e21
+RtlFreeHeap,0x1f4a3
+RtlpHeapFailureInfo,0x0
+LdrShutdownProcess,0x351bf
+operator delete,0x0
+RtlReAllocateHeap,0x22d2b
+std::_DebugHeapDelete<>,0x0
+RtlCreateActivationContext,0x31c9f
+free_impl,0x0
+RtlGetUserInfoHeap,0x2a099
+RtlWalkHeap,0x724a1
+RtlSetUserFlagsHeap,0x71ea9
+operator delete nothrow,0x0
+_malloc_dbg,0x0
+RtlExitUserProcess,0x0
+RtlLockHeap,0x29a63
+_calloc_impl,0x0
+RtlGetProcessHeaps,0x72361
+RtlSetUserValueHeap,0x2bee0
+RtlEnumProcessHeaps,0x72419
+RtlSizeHeap,0x2192b
+calloc_impl,0x0
+operator new nothrow,0x0
+free,0x0
+malloc_usable_size,0x0
+malloc_impl,0x0
+independent_calloc,0x0
+malloc_trim,0x0
+sbrk,0x0
+independent_comalloc,0x0
+strncasecmp,0x0
+operator new[] nothrow,0x0
+operator new[],0x0
+malloc_stats,0x0
+realloc_impl,0x0
+strcasecmp,0x0

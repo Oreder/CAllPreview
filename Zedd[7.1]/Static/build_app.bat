@@ -1,0 +1,1 @@
+gcc -std=c99 -Wall -Werror -pedantic main.c lib.a -o test.exe

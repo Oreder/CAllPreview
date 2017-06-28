@@ -1,0 +1,22 @@
+Dr. Memory version 1.9.0 build 0 built on Aug 28 2015 22:56:18
+Dr. Memory results for pid 204: "main.exe"
+Application cmdline: "main.exe in.txt out.txt"
+Recorded 110 suppression(s) from default C:\Program Files (x86)\Dr. Memory\bin\suppress-default.txt
+
+===========================================================================
+FINAL SUMMARY:
+
+DUPLICATE ERROR COUNTS:
+
+SUPPRESSIONS USED:
+
+NO ERRORS FOUND:
+      0 unique,     0 total unaddressable access(es)
+      0 unique,     0 total uninitialized access(es)
+      0 unique,     0 total invalid heap argument(s)
+      0 unique,     0 total GDI usage error(s)
+      0 unique,     0 total handle leak(s)
+      0 unique,     0 total warning(s)
+      0 unique,     0 total,      0 byte(s) of leak(s)
+      0 unique,     0 total,      0 byte(s) of possible leak(s)
+Details: C:\Zedd\Second\\DrMemory-main.exe.204.000\results.txt

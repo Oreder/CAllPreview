@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <stdlib.h>
+//#include <assert.h>
+#include "bsort.h"
+
+unsigned long long tick(void)
+{
+	unsigned long long d;
+	__asm__ __volatile__ ("rdtsc" : "=A" (d) );
+	return d;
+}
+
+/// \author Binh Nguyen Duc
+/// \brief  function gets random number in range
+/// param[in] min_num, max_num - ranges
+
+/* random number in range */
+int random_number(int min_num, int max_num)
+{
+    //assert(max_num - min_num > 0);
+	return (rand() % (max_num-min_num)) + min_num;
+}
+
+/// \author Binh Nguyen Duc
+/// \brief  procedure randomizes array in range
+/// param[in] nmemb - number members of array, low, high - random ranges
+/// param[out] randomized array
+
+/* randomize array */
+int random_array(int *a, int *b, const int nmemb, const int low, const int high)
+{
+	for (int i = 0; i < nmemb; i++)
+	{
+		a[i] = random_number(low, high);
+		b[i] = a[i];
+	}
+	return 0;
+}
+
+/*
+void test(void)
+{
+	long double test = 0.0;
+	for (unsigned long long i = 0; i < 10000; i++)
+		test += 0.5;
+}
+*/
+
+#define N 5
+
+int main(void)
+{
+	int a[10], b[10];
+	
+	random_array(a, b, 10, 0, 10);
+	for (int i = 0; i < 10; i++)
+		printf("%d ", *(a+i));
+	printf("\n");
+	
+	unsigned long long tb, te;
+	tb = tick();
+	qsort(a, 10, sizeof(int), int_comp);
+	te = tick();
+	
+	for (int i = 0; i < 10; i++)
+		printf("%d ", *(a+i));	
+	printf("\n\n[Q]test 'time': %llu", te-tb);
+	printf("\n------\n");
+	
+	for (int i = 0; i < 10; i++)
+		printf("%d ", *(b+i));
+	printf("\n");
+	tb = tick();
+	bsort(a, 10, sizeof(int), int_comp);
+	te = tick();
+	
+	for (int i = 0; i < 10; i++)
+		printf("%d ", *(a+i));	
+	printf("\n\n[Q]test 'time': %llu", te-tb);
+	printf("\n");
+	
+	return 0;
+}

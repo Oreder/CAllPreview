@@ -1,0 +1,871 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- saved from url=(0066)http://www.opensource.apple.com/source/ruby/ruby-79/ruby/sprintf.c -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>sprintf.c</title>
+<style type="text/css">
+.enscript-comment { font-style: italic; color: rgb(178,34,34); }
+.enscript-function-name { font-weight: bold; color: rgb(0,0,255); }
+.enscript-variable-name { font-weight: bold; color: rgb(184,134,11); }
+.enscript-keyword { font-weight: bold; color: rgb(160,32,240); }
+.enscript-reference { font-weight: bold; color: rgb(95,158,160); }
+.enscript-string { font-weight: bold; color: rgb(188,143,143); }
+.enscript-builtin { font-weight: bold; color: rgb(218,112,214); }
+.enscript-type { font-weight: bold; color: rgb(34,139,34); }
+.enscript-highlight { text-decoration: underline; color: 0; }
+</style>
+</head>
+<body id="top">
+<h1 style="margin:8px;" id="f1">sprintf.c&nbsp;&nbsp;&nbsp;<span style="font-weight: normal; font-size: 0.5em;">[<a href="http://www.opensource.apple.com/source/ruby/ruby-79/ruby/sprintf.c?txt">plain text</a>]</span></h1>
+<hr>
+<div></div>
+<pre><span class="enscript-comment">/**********************************************************************
+
+  sprintf.c -
+
+  $Author: shyouhei $
+  $Date: 2008-06-20 08:12:46 +0900 (Fri, 20 Jun 2008) $
+  created at: Fri Oct 15 10:39:26 JST 1993
+
+  Copyright (C) 1993-2003 Yukihiro Matsumoto
+  Copyright (C) 2000  Network Applied Communication Laboratory, Inc.
+  Copyright (C) 2000  Information-technology Promotion Agency, Japan
+
+**********************************************************************/</span>
+
+#<span class="enscript-reference">include</span> <span class="enscript-string">"ruby.h"</span>
+#<span class="enscript-reference">include</span> <span class="enscript-string">"re.h"</span>
+#<span class="enscript-reference">include</span> <span class="enscript-string">&lt;ctype.h&gt;</span>
+#<span class="enscript-reference">include</span> <span class="enscript-string">&lt;math.h&gt;</span>
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">BIT_DIGITS</span>(N)   (((N)*146)/485 + 1)  <span class="enscript-comment">/* log2(10) =~ 146/485 */</span>
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">BITSPERDIG</span> (SIZEOF_BDIGITS*CHAR_BIT)
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">EXTENDSIGN</span>(n, l) (((~0 &lt;&lt; (n)) &gt;&gt; (((n)*(l)) % BITSPERDIG)) &amp; ~(~0 &lt;&lt; (n)))
+
+<span class="enscript-type">static</span> <span class="enscript-type">void</span> fmt_setup <span class="enscript-function-name">_</span>((<span class="enscript-type">char</span>*,<span class="enscript-type">int</span>,<span class="enscript-type">int</span>,<span class="enscript-type">int</span>,<span class="enscript-type">int</span>));
+
+<span class="enscript-type">static</span> <span class="enscript-type">char</span>*
+<span class="enscript-function-name">remove_sign_bits</span>(str, base)
+    <span class="enscript-type">char</span> *str;
+    <span class="enscript-type">int</span> base;
+{
+    <span class="enscript-type">char</span> *s, *t;
+    
+    s = t = str;
+
+    <span class="enscript-keyword">if</span> (base == 16) {
+	<span class="enscript-keyword">while</span> (*t == <span class="enscript-string">'f'</span>) {
+	    t++;
+	}
+    }
+    <span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (base == 8) {
+	*t |= EXTENDSIGN(3, strlen(t));
+	<span class="enscript-keyword">while</span> (*t == <span class="enscript-string">'7'</span>) {
+	    t++;
+	}
+    }
+    <span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (base == 2) {
+	<span class="enscript-keyword">while</span> (*t == <span class="enscript-string">'1'</span>) {
+	    t++;
+	}
+    }
+    <span class="enscript-keyword">if</span> (t &gt; s) {
+	<span class="enscript-keyword">while</span> (*t) *s++ = *t++;
+	*s = <span class="enscript-string">'\0'</span>;
+    }
+
+    <span class="enscript-keyword">return</span> str;
+}
+
+<span class="enscript-type">static</span> <span class="enscript-type">char</span>
+<span class="enscript-function-name">sign_bits</span>(base, p)
+    <span class="enscript-type">int</span> base;
+    <span class="enscript-type">const</span> <span class="enscript-type">char</span> *p;
+{
+    <span class="enscript-type">char</span> c = <span class="enscript-string">'.'</span>;
+
+    <span class="enscript-keyword">switch</span> (base) {
+      <span class="enscript-keyword">case</span> <span class="enscript-reference">16</span>:
+	<span class="enscript-keyword">if</span> (*p == <span class="enscript-string">'X'</span>) c = <span class="enscript-string">'F'</span>;
+	<span class="enscript-keyword">else</span> c = <span class="enscript-string">'f'</span>;
+	<span class="enscript-keyword">break</span>;
+      <span class="enscript-keyword">case</span> <span class="enscript-reference">8</span>:
+	c = <span class="enscript-string">'7'</span>; <span class="enscript-keyword">break</span>;
+      <span class="enscript-keyword">case</span> <span class="enscript-reference">2</span>:
+	c = <span class="enscript-string">'1'</span>; <span class="enscript-keyword">break</span>;
+    }
+    <span class="enscript-keyword">return</span> c;
+}
+
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FNONE</span>  0
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FSHARP</span> 1
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FMINUS</span> 2
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FPLUS</span>  4
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FZERO</span>  8
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FSPACE</span> 16
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FWIDTH</span> 32
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FPREC</span>  64
+#<span class="enscript-reference">define</span> <span class="enscript-variable-name">FPREC0</span> 128
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">CHECK</span>(l) do {\
+    <span class="enscript-keyword">while</span> (blen + (l) &gt;= bsiz) {\
+	bsiz*=2;\
+    }\
+    rb_str_resize(result, bsiz);\
+    buf = RSTRING(result)-&gt;ptr;\
+} <span class="enscript-keyword">while</span> (0)
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">PUSH</span>(s, l) do { \
+    CHECK(l);\
+    memcpy(&amp;buf[blen], s, l);\
+    blen += (l);\
+} <span class="enscript-keyword">while</span> (0)
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">GETARG</span>() (nextvalue != Qundef ? nextvalue : \
+    posarg &lt; 0 ? \
+    (rb_raise(rb_eArgError, <span class="enscript-string">"unnumbered(%d) mixed with numbered"</span>, nextarg), 0) : \
+    (posarg = nextarg++, GETNTHARG(posarg)))
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">GETPOSARG</span>(n) (posarg &gt; 0 ? \
+    (rb_raise(rb_eArgError, <span class="enscript-string">"numbered(%d) after unnumbered(%d)"</span>, n, posarg), 0) : \
+    ((n &lt; 1) ? (rb_raise(rb_eArgError, <span class="enscript-string">"invalid index - %d$"</span>, n), 0) : \
+	       (posarg = -1, GETNTHARG(n))))
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">GETNTHARG</span>(nth) \
+    ((nth &gt;= argc) ? (rb_raise(rb_eArgError, <span class="enscript-string">"too few arguments"</span>), 0) : argv[nth])
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">GETNUM</span>(n, val) \
+    <span class="enscript-keyword">for</span> (; p &lt; end &amp;&amp; ISDIGIT(*p); p++) { \
+	<span class="enscript-type">int</span> next_n = 10 * n + (*p - <span class="enscript-string">'0'</span>); \
+        <span class="enscript-keyword">if</span> (next_n / 10 != n) {\
+	    rb_raise(rb_eArgError, #val <span class="enscript-string">" too big"</span>); \
+	} \
+	n = next_n; \
+    } \
+    <span class="enscript-keyword">if</span> (p &gt;= end) { \
+	rb_raise(rb_eArgError, <span class="enscript-string">"malformed format string - %%*[0-9]"</span>); \
+    }
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">GETASTER</span>(val) do { \
+    t = p++; \
+    n = 0; \
+    GETNUM(n, val); \
+    <span class="enscript-keyword">if</span> (*p == <span class="enscript-string">'$'</span>) { \
+	tmp = GETPOSARG(n); \
+    } \
+    <span class="enscript-keyword">else</span> { \
+	tmp = GETARG(); \
+	p = t; \
+    } \
+    val = NUM2INT(tmp); \
+} <span class="enscript-keyword">while</span> (0)
+
+
+<span class="enscript-comment">/*
+ *  call-seq:
+ *     format(format_string [, arguments...] )   =&gt; string
+ *     sprintf(format_string [, arguments...] )  =&gt; string
+ *  
+ *  Returns the string resulting from applying &lt;i&gt;format_string&lt;/i&gt; to
+ *  any additional arguments. Within the format string, any characters
+ *  other than format sequences are copied to the result. A format
+ *  sequence consists of a percent sign, followed by optional flags,
+ *  width, and precision indicators, then terminated with a field type
+ *  character. The field type controls how the corresponding
+ *  &lt;code&gt;sprintf&lt;/code&gt; argument is to be interpreted, while the flags
+ *  modify that interpretation. The field type characters are listed
+ *  in the table at the end of this section. The flag characters are:
+ *
+ *    Flag     | Applies to   | Meaning
+ *    ---------+--------------+-----------------------------------------
+ *    space    | bdeEfgGiouxX | Leave a space at the start of 
+ *             |              | positive numbers.
+ *    ---------+--------------+-----------------------------------------
+ *    (digit)$ | all          | Specifies the absolute argument number
+ *             |              | for this field. Absolute and relative
+ *             |              | argument numbers cannot be mixed in a
+ *             |              | sprintf string.
+ *    ---------+--------------+-----------------------------------------
+ *     #       | beEfgGoxX    | Use an alternative format. For the
+ *             |              | conversions `o', `x', `X', and `b', 
+ *             |              | prefix the result with ``0'', ``0x'', ``0X'',
+ *             |              |  and ``0b'', respectively. For `e',
+ *             |              | `E', `f', `g', and 'G', force a decimal
+ *             |              | point to be added, even if no digits follow.
+ *             |              | For `g' and 'G', do not remove trailing zeros.
+ *    ---------+--------------+-----------------------------------------
+ *    +        | bdeEfgGiouxX | Add a leading plus sign to positive numbers.
+ *    ---------+--------------+-----------------------------------------
+ *    -        | all          | Left-justify the result of this conversion.
+ *    ---------+--------------+-----------------------------------------
+ *    0 (zero) | bdeEfgGiouxX | Pad with zeros, not spaces.
+ *    ---------+--------------+-----------------------------------------
+ *    *        | all          | Use the next argument as the field width. 
+ *             |              | If negative, left-justify the result. If the
+ *             |              | asterisk is followed by a number and a dollar 
+ *             |              | sign, use the indicated argument as the width.
+ *
+ *     
+ *  The field width is an optional integer, followed optionally by a
+ *  period and a precision. The width specifies the minimum number of
+ *  characters that will be written to the result for this field. For
+ *  numeric fields, the precision controls the number of decimal places
+ *  displayed. For string fields, the precision determines the maximum
+ *  number of characters to be copied from the string. (Thus, the format
+ *  sequence &lt;code&gt;%10.10s&lt;/code&gt; will always contribute exactly ten
+ *  characters to the result.)
+ *
+ *  The field types are:
+ *
+ *      Field |  Conversion
+ *      ------+--------------------------------------------------------------
+ *        b   | Convert argument as a binary number.
+ *        c   | Argument is the numeric code for a single character.
+ *        d   | Convert argument as a decimal number.
+ *        E   | Equivalent to `e', but uses an uppercase E to indicate
+ *            | the exponent.
+ *        e   | Convert floating point argument into exponential notation 
+ *            | with one digit before the decimal point. The precision
+ *            | determines the number of fractional digits (defaulting to six).
+ *        f   | Convert floating point argument as [-]ddd.ddd, 
+ *            |  where the precision determines the number of digits after
+ *            | the decimal point.
+ *        G   | Equivalent to `g', but use an uppercase `E' in exponent form.
+ *        g   | Convert a floating point number using exponential form
+ *            | if the exponent is less than -4 or greater than or
+ *            | equal to the precision, or in d.dddd form otherwise.
+ *        i   | Identical to `d'.
+ *        o   | Convert argument as an octal number.
+ *        p   | The valuing of argument.inspect.
+ *        s   | Argument is a string to be substituted. If the format
+ *            | sequence contains a precision, at most that many characters
+ *            | will be copied.
+ *        u   | Treat argument as an unsigned decimal number. Negative integers
+ *            | are displayed as a 32 bit two's complement plus one for the
+ *            | underlying architecture; that is, 2 ** 32 + n.  However, since
+ *            | Ruby has no inherent limit on bits used to represent the
+ *            | integer, this value is preceded by two dots (..) in order to
+ *            | indicate a infinite number of leading sign bits.
+ *        X   | Convert argument as a hexadecimal number using uppercase
+ *            | letters. Negative numbers will be displayed with two
+ *            | leading periods (representing an infinite string of
+ *            | leading 'FF's.
+ *        x   | Convert argument as a hexadecimal number.
+ *            | Negative numbers will be displayed with two
+ *            | leading periods (representing an infinite string of
+ *            | leading 'ff's.
+ *     
+ *  Examples:
+ *
+ *     sprintf("%d %04x", 123, 123)               #=&gt; "123 007b"
+ *     sprintf("%08b '%4s'", 123, 123)            #=&gt; "01111011 ' 123'"
+ *     sprintf("%1$*2$s %2$d %1$s", "hello", 8)   #=&gt; "   hello 8 hello"
+ *     sprintf("%1$*2$s %2$d", "hello", -8)       #=&gt; "hello    -8"
+ *     sprintf("%+g:% g:%-g", 1.23, 1.23, 1.23)   #=&gt; "+1.23: 1.23:1.23"
+ *     sprintf("%u", -123)                        #=&gt; "..4294967173"
+ */</span>
+
+VALUE
+<span class="enscript-function-name">rb_f_sprintf</span>(argc, argv)
+    <span class="enscript-type">int</span> argc;
+    VALUE *argv;
+{
+    <span class="enscript-keyword">return</span> rb_str_format(argc - 1, argv + 1, GETNTHARG(0));
+}
+
+VALUE
+<span class="enscript-function-name">rb_str_format</span>(argc, argv, fmt)
+    <span class="enscript-type">int</span> argc;
+    VALUE *argv;
+    VALUE fmt;
+{
+    <span class="enscript-type">const</span> <span class="enscript-type">char</span> *p, *end;
+    <span class="enscript-type">char</span> *buf;
+    <span class="enscript-type">int</span> blen, bsiz;
+    VALUE result;
+
+    <span class="enscript-type">int</span> width, prec, flags = FNONE;
+    <span class="enscript-type">int</span> nextarg = 1;
+    <span class="enscript-type">int</span> posarg = 0;
+    <span class="enscript-type">int</span> tainted = 0;
+    VALUE nextvalue;
+    VALUE tmp;
+    VALUE str;
+
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">CHECK_FOR_WIDTH</span>(f)				 \
+    <span class="enscript-keyword">if</span> ((f) &amp; FWIDTH) {					 \
+	rb_raise(rb_eArgError, <span class="enscript-string">"width given twice"</span>);	 \
+    }							 \
+    <span class="enscript-keyword">if</span> ((f) &amp; FPREC0) {					 \
+	rb_raise(rb_eArgError, <span class="enscript-string">"width after precision"</span>); \
+    }
+#<span class="enscript-reference">define</span> <span class="enscript-function-name">CHECK_FOR_FLAGS</span>(f)				 \
+    <span class="enscript-keyword">if</span> ((f) &amp; FWIDTH) {					 \
+	rb_raise(rb_eArgError, <span class="enscript-string">"flag after width"</span>);	 \
+    }							 \
+    <span class="enscript-keyword">if</span> ((f) &amp; FPREC0) {					 \
+	rb_raise(rb_eArgError, <span class="enscript-string">"flag after precision"</span>); \
+    }
+
+    ++argc;
+    --argv;
+    <span class="enscript-keyword">if</span> (OBJ_TAINTED(fmt)) tainted = 1;
+    StringValue(fmt);
+    fmt = rb_str_new4(fmt);
+    p = RSTRING(fmt)-&gt;ptr;
+    end = p + RSTRING(fmt)-&gt;len;
+    blen = 0;
+    bsiz = 120;
+    result = rb_str_buf_new(bsiz);
+    buf = RSTRING(result)-&gt;ptr;
+
+    <span class="enscript-keyword">for</span> (; p &lt; end; p++) {
+	<span class="enscript-type">const</span> <span class="enscript-type">char</span> *t;
+	<span class="enscript-type">int</span> n;
+
+	<span class="enscript-keyword">for</span> (t = p; t &lt; end &amp;&amp; *t != <span class="enscript-string">'%'</span>; t++) ;
+	PUSH(p, t - p);
+	<span class="enscript-keyword">if</span> (t &gt;= end) {
+	    <span class="enscript-comment">/* end of fmt string */</span>
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">sprint_exit</span>;
+	}
+	p = t + 1;		<span class="enscript-comment">/* skip `%' */</span>
+
+	width = prec = -1;
+	nextvalue = Qundef;
+      <span class="enscript-reference">retry</span>:
+	<span class="enscript-keyword">switch</span> (*p) {
+	  <span class="enscript-reference">default</span>:
+	    <span class="enscript-keyword">if</span> (ISPRINT(*p))
+		rb_raise(rb_eArgError, <span class="enscript-string">"malformed format string - %%%c"</span>, *p);
+	    <span class="enscript-keyword">else</span>
+		rb_raise(rb_eArgError, <span class="enscript-string">"malformed format string"</span>);
+	    <span class="enscript-keyword">break</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">' '</span>:
+	    CHECK_FOR_FLAGS(flags);
+	    flags |= FSPACE;
+	    p++;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'#'</span>:
+	    CHECK_FOR_FLAGS(flags);
+	    flags |= FSHARP;
+	    p++;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'+'</span>:
+	    CHECK_FOR_FLAGS(flags);
+	    flags |= FPLUS;
+	    p++;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'-'</span>:
+	    CHECK_FOR_FLAGS(flags);
+	    flags |= FMINUS;
+	    p++;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'0'</span>:
+	    CHECK_FOR_FLAGS(flags);
+	    flags |= FZERO;
+	    p++;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'1'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'2'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'3'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'4'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'5'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'6'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'7'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'8'</span>: <span class="enscript-keyword">case</span> <span class="enscript-string">'9'</span>:
+	    n = 0;
+	    GETNUM(n, width);
+	    <span class="enscript-keyword">if</span> (*p == <span class="enscript-string">'$'</span>) {
+		<span class="enscript-keyword">if</span> (nextvalue != Qundef) {
+		    rb_raise(rb_eArgError, <span class="enscript-string">"value given twice - %d$"</span>, n);
+		}
+		nextvalue = GETPOSARG(n);
+		p++;
+		<span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+	    }
+	    CHECK_FOR_WIDTH(flags);
+	    width = n;
+	    flags |= FWIDTH;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'*'</span>:
+	    CHECK_FOR_WIDTH(flags);
+	    flags |= FWIDTH;
+	    GETASTER(width);
+	    <span class="enscript-keyword">if</span> (width &lt; 0) {
+		flags |= FMINUS;
+		width = -width;
+	    }
+	    p++;
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'.'</span>:
+	    <span class="enscript-keyword">if</span> (flags &amp; FPREC0) {
+		rb_raise(rb_eArgError, <span class="enscript-string">"precision given twice"</span>);
+	    }
+	    flags |= FPREC|FPREC0;
+
+	    prec = 0;
+	    p++;
+	    <span class="enscript-keyword">if</span> (*p == <span class="enscript-string">'*'</span>) {
+		GETASTER(prec);
+		<span class="enscript-keyword">if</span> (prec &lt; 0) {	<span class="enscript-comment">/* ignore negative precision */</span>
+		    flags &amp;= ~FPREC;
+		}
+		p++;
+		<span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+	    }
+
+	    GETNUM(prec, precision);
+	    <span class="enscript-keyword">goto</span> <span class="enscript-reference">retry</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'\n'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'\0'</span>:
+	    p--;
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'%'</span>:
+	    <span class="enscript-keyword">if</span> (flags != FNONE) {
+		rb_raise(rb_eArgError, <span class="enscript-string">"illegal format character - %%"</span>);
+	    }
+	    PUSH(<span class="enscript-string">"%"</span>, 1);
+	    <span class="enscript-keyword">break</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'c'</span>:
+	    {
+		VALUE val = GETARG();
+		<span class="enscript-type">char</span> c;
+
+		<span class="enscript-keyword">if</span> (!(flags &amp; FMINUS))
+		    <span class="enscript-keyword">while</span> (--width &gt; 0)
+			PUSH(<span class="enscript-string">" "</span>, 1);
+		c = NUM2INT(val) &amp; 0xff;
+		PUSH(&amp;c, 1);
+		<span class="enscript-keyword">while</span> (--width &gt; 0)
+		    PUSH(<span class="enscript-string">" "</span>, 1);
+	    }
+	    <span class="enscript-keyword">break</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'s'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'p'</span>:
+	    {
+		VALUE arg = GETARG();
+		<span class="enscript-type">long</span> len;
+
+		<span class="enscript-keyword">if</span> (*p == <span class="enscript-string">'p'</span>) arg = rb_inspect(arg);
+		str = rb_obj_as_string(arg);
+		<span class="enscript-keyword">if</span> (OBJ_TAINTED(str)) tainted = 1;
+		len = RSTRING(str)-&gt;len;
+		<span class="enscript-keyword">if</span> (flags&amp;FPREC) {
+		    <span class="enscript-keyword">if</span> (prec &lt; len) {
+			len = prec;
+		    }
+		}
+		<span class="enscript-comment">/* need to adjust multi-byte string pos */</span>
+		<span class="enscript-keyword">if</span> (flags&amp;FWIDTH) {
+		    <span class="enscript-keyword">if</span> (width &gt; len) {
+			CHECK(width);
+			width -= len;
+			<span class="enscript-keyword">if</span> (!(flags&amp;FMINUS)) {
+			    <span class="enscript-keyword">while</span> (width--) {
+				buf[blen++] = <span class="enscript-string">' '</span>;
+			    }
+			}
+			memcpy(&amp;buf[blen], RSTRING_PTR(str), len);
+			blen += len;
+			<span class="enscript-keyword">if</span> (flags&amp;FMINUS) {
+			    <span class="enscript-keyword">while</span> (width--) {
+				buf[blen++] = <span class="enscript-string">' '</span>;
+			    }
+			}
+			<span class="enscript-keyword">break</span>;
+		    }
+		}
+		PUSH(RSTRING(str)-&gt;ptr, len);
+	    }
+	    <span class="enscript-keyword">break</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'d'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'i'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'o'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'x'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'X'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'b'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'B'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'u'</span>:
+	    {
+		<span class="enscript-type">volatile</span> VALUE val = GETARG();
+		<span class="enscript-type">char</span> fbuf[32], nbuf[64], *s, *t;
+		<span class="enscript-type">const</span> <span class="enscript-type">char</span> *prefix = 0;
+		<span class="enscript-type">int</span> sign = 0;
+		<span class="enscript-type">char</span> sc = 0;
+		<span class="enscript-type">long</span> v = 0;
+		<span class="enscript-type">int</span> base, bignum = 0;
+		<span class="enscript-type">int</span> len, pos;
+		<span class="enscript-type">volatile</span> VALUE tmp;
+                <span class="enscript-type">volatile</span> VALUE tmp1;
+
+		<span class="enscript-keyword">switch</span> (*p) {
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'d'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'i'</span>:
+		    sign = 1; <span class="enscript-keyword">break</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'o'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'x'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'X'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'b'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'B'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'u'</span>:
+		  <span class="enscript-reference">default</span>:
+		    <span class="enscript-keyword">if</span> (flags&amp;(FPLUS|FSPACE)) sign = 1;
+		    <span class="enscript-keyword">break</span>;
+		}
+		<span class="enscript-keyword">if</span> (flags &amp; FSHARP) {
+		    <span class="enscript-keyword">switch</span> (*p) {
+		      <span class="enscript-keyword">case</span> <span class="enscript-string">'o'</span>:
+			prefix = <span class="enscript-string">"0"</span>; <span class="enscript-keyword">break</span>;
+		      <span class="enscript-keyword">case</span> <span class="enscript-string">'x'</span>:
+			prefix = <span class="enscript-string">"0x"</span>; <span class="enscript-keyword">break</span>;
+		      <span class="enscript-keyword">case</span> <span class="enscript-string">'X'</span>:
+			prefix = <span class="enscript-string">"0X"</span>; <span class="enscript-keyword">break</span>;
+		      <span class="enscript-keyword">case</span> <span class="enscript-string">'b'</span>:
+			prefix = <span class="enscript-string">"0b"</span>; <span class="enscript-keyword">break</span>;
+		      <span class="enscript-keyword">case</span> <span class="enscript-string">'B'</span>:
+			prefix = <span class="enscript-string">"0B"</span>; <span class="enscript-keyword">break</span>;
+		    }
+		    <span class="enscript-keyword">if</span> (prefix) {
+			width -= strlen(prefix);
+		    }
+		}
+
+	      <span class="enscript-reference">bin_retry</span>:
+		<span class="enscript-keyword">switch</span> (TYPE(val)) {
+		  <span class="enscript-keyword">case</span> <span class="enscript-reference">T_FLOAT</span>:
+		    val = rb_dbl2big(RFLOAT(val)-&gt;value);
+		    <span class="enscript-keyword">if</span> (FIXNUM_P(val)) <span class="enscript-keyword">goto</span> <span class="enscript-reference">bin_retry</span>;
+		    bignum = 1;
+		    <span class="enscript-keyword">break</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-reference">T_STRING</span>:
+		    val = rb_str_to_inum(val, 0, Qtrue);
+		    <span class="enscript-keyword">goto</span> <span class="enscript-reference">bin_retry</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-reference">T_BIGNUM</span>:
+		    bignum = 1;
+		    <span class="enscript-keyword">break</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-reference">T_FIXNUM</span>:
+		    v = FIX2LONG(val);
+		    <span class="enscript-keyword">break</span>;
+		  <span class="enscript-reference">default</span>:
+		    val = rb_Integer(val);
+		    <span class="enscript-keyword">goto</span> <span class="enscript-reference">bin_retry</span>;
+		}
+
+		<span class="enscript-keyword">switch</span> (*p) {
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'o'</span>:
+		    base = 8; <span class="enscript-keyword">break</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'x'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'X'</span>:
+		    base = 16; <span class="enscript-keyword">break</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'b'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'B'</span>:
+		    base = 2; <span class="enscript-keyword">break</span>;
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'u'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'d'</span>:
+		  <span class="enscript-keyword">case</span> <span class="enscript-string">'i'</span>:
+		  <span class="enscript-reference">default</span>:
+		    base = 10; <span class="enscript-keyword">break</span>;
+		}
+
+		<span class="enscript-keyword">if</span> (!bignum) {
+		    <span class="enscript-keyword">if</span> (base == 2) {
+			val = rb_int2big(v);
+			<span class="enscript-keyword">goto</span> <span class="enscript-reference">bin_retry</span>;
+		    }
+		    <span class="enscript-keyword">if</span> (sign) {
+			<span class="enscript-type">char</span> c = *p;
+			<span class="enscript-keyword">if</span> (c == <span class="enscript-string">'i'</span>) c = <span class="enscript-string">'d'</span>; <span class="enscript-comment">/* %d and %i are identical */</span>
+			<span class="enscript-keyword">if</span> (v &lt; 0) {
+			    v = -v;
+			    sc = <span class="enscript-string">'-'</span>;
+			    width--;
+			}
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FPLUS) {
+			    sc = <span class="enscript-string">'+'</span>;
+			    width--;
+			}
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FSPACE) {
+			    sc = <span class="enscript-string">' '</span>;
+			    width--;
+			}
+			sprintf(fbuf, <span class="enscript-string">"%%l%c"</span>, c);
+			sprintf(nbuf, fbuf, v);
+			s = nbuf;
+			<span class="enscript-keyword">goto</span> <span class="enscript-reference">format_integer</span>;
+		    }
+		    s = nbuf;
+		    <span class="enscript-keyword">if</span> (v &lt; 0) {
+			<span class="enscript-keyword">if</span> (base == 10) {
+			    rb_warning(<span class="enscript-string">"negative number for %%u specifier"</span>);
+			}
+			<span class="enscript-keyword">if</span> (!(flags&amp;(FPREC|FZERO))) {
+			    strcpy(s, <span class="enscript-string">".."</span>);
+			    s += 2;
+			}
+		    }
+		    sprintf(fbuf, <span class="enscript-string">"%%l%c"</span>, *p == <span class="enscript-string">'X'</span> ? <span class="enscript-string">'x'</span> : *p);
+		    sprintf(s, fbuf, v);
+		    <span class="enscript-keyword">if</span> (v &lt; 0) {
+			<span class="enscript-type">char</span> d = 0;
+
+			remove_sign_bits(s, base);
+			<span class="enscript-keyword">switch</span> (base) {
+			  <span class="enscript-keyword">case</span> <span class="enscript-reference">16</span>:
+			    d = <span class="enscript-string">'f'</span>; <span class="enscript-keyword">break</span>;
+			  <span class="enscript-keyword">case</span> <span class="enscript-reference">8</span>:
+			    d = <span class="enscript-string">'7'</span>; <span class="enscript-keyword">break</span>;
+			}
+			<span class="enscript-keyword">if</span> (d &amp;&amp; *s != d) {
+			    memmove(s+1, s, strlen(s)+1);
+			    *s = d;
+			}
+		    }
+		    s = nbuf;
+		    <span class="enscript-keyword">goto</span> <span class="enscript-reference">format_integer</span>;
+		}
+
+		<span class="enscript-keyword">if</span> (sign) {
+		    tmp = rb_big2str(val, base);
+		    s = RSTRING(tmp)-&gt;ptr;
+		    <span class="enscript-keyword">if</span> (s[0] == <span class="enscript-string">'-'</span>) {
+			s++;
+			sc = <span class="enscript-string">'-'</span>;
+                        width--;
+		    }
+		    <span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FPLUS) {
+			sc = <span class="enscript-string">'+'</span>;
+                        width--;
+		    }
+		    <span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FSPACE) {
+			sc = <span class="enscript-string">' '</span>;
+                        width--;
+		    }
+		    <span class="enscript-keyword">goto</span> <span class="enscript-reference">format_integer</span>;
+		}
+		<span class="enscript-keyword">if</span> (!RBIGNUM(val)-&gt;sign) {
+		    val = rb_big_clone(val);
+		    rb_big_2comp(val);
+		}
+		tmp1 = tmp = rb_big2str0(val, base, RBIGNUM(val)-&gt;sign);
+		s = RSTRING(tmp)-&gt;ptr;
+		<span class="enscript-keyword">if</span> (*s == <span class="enscript-string">'-'</span>) {
+		    <span class="enscript-keyword">if</span> (base == 10) {
+			rb_warning(<span class="enscript-string">"negative number for %%u specifier"</span>);
+		    }
+		    remove_sign_bits(++s, base);
+		    tmp = rb_str_new(0, 3+strlen(s));
+		    t = RSTRING(tmp)-&gt;ptr;
+		    <span class="enscript-keyword">if</span> (!(flags&amp;(FPREC|FZERO))) {
+			strcpy(t, <span class="enscript-string">".."</span>);
+			t += 2;
+		    }
+		    <span class="enscript-keyword">switch</span> (base) {
+		      <span class="enscript-keyword">case</span> <span class="enscript-reference">16</span>:
+			<span class="enscript-keyword">if</span> (s[0] != <span class="enscript-string">'f'</span>) strcpy(t++, <span class="enscript-string">"f"</span>); <span class="enscript-keyword">break</span>;
+		      <span class="enscript-keyword">case</span> <span class="enscript-reference">8</span>:
+			<span class="enscript-keyword">if</span> (s[0] != <span class="enscript-string">'7'</span>) strcpy(t++, <span class="enscript-string">"7"</span>); <span class="enscript-keyword">break</span>;
+		      <span class="enscript-keyword">case</span> <span class="enscript-reference">2</span>:
+			<span class="enscript-keyword">if</span> (s[0] != <span class="enscript-string">'1'</span>) strcpy(t++, <span class="enscript-string">"1"</span>); <span class="enscript-keyword">break</span>;
+		    }
+		    strcpy(t, s);
+		    bignum = 2;
+		}
+		s = RSTRING(tmp)-&gt;ptr;
+
+	      <span class="enscript-reference">format_integer</span>:
+		pos = -1;
+		len = strlen(s);
+
+		<span class="enscript-keyword">if</span> (*p == <span class="enscript-string">'X'</span>) {
+		    <span class="enscript-type">char</span> *pp = s;
+		    <span class="enscript-keyword">while</span> (*pp) {
+			*pp = toupper(*pp);
+			pp++;
+		    }
+		}
+		<span class="enscript-keyword">if</span> ((flags&amp;(FZERO|FPREC)) == FZERO) {
+		    prec = width;
+		    width = 0;
+		}
+		<span class="enscript-keyword">else</span> {
+		    <span class="enscript-keyword">if</span> (prec &lt; len) prec = len;
+		    width -= prec;
+		}
+		<span class="enscript-keyword">if</span> (!(flags&amp;FMINUS)) {
+		    CHECK(width);
+		    <span class="enscript-keyword">while</span> (width-- &gt; 0) {
+			buf[blen++] = <span class="enscript-string">' '</span>;
+		    }
+		}
+		<span class="enscript-keyword">if</span> (sc) PUSH(&amp;sc, 1);
+		<span class="enscript-keyword">if</span> (prefix) {
+		    <span class="enscript-type">int</span> plen = strlen(prefix);
+		    PUSH(prefix, plen);
+		}
+		CHECK(prec - len);
+		<span class="enscript-keyword">if</span> (!bignum &amp;&amp; v &lt; 0) {
+		    <span class="enscript-type">char</span> c = sign_bits(base, p);
+		    <span class="enscript-keyword">while</span> (len &lt; prec--) {
+			buf[blen++] = c;
+		    }
+		}
+		<span class="enscript-keyword">else</span> {
+		    <span class="enscript-type">char</span> c;
+
+		    <span class="enscript-keyword">if</span> (!sign &amp;&amp; bignum &amp;&amp; !RBIGNUM(val)-&gt;sign)
+			c = sign_bits(base, p);
+		    <span class="enscript-keyword">else</span>
+			c = <span class="enscript-string">'0'</span>;
+		    <span class="enscript-keyword">while</span> (len &lt; prec--) {
+			buf[blen++] = c;
+		    }
+		}
+		PUSH(s, len);
+		CHECK(width);
+		<span class="enscript-keyword">while</span> (width-- &gt; 0) {
+		    buf[blen++] = <span class="enscript-string">' '</span>;
+		}
+	    }
+	    <span class="enscript-keyword">break</span>;
+
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'f'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'g'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'G'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'e'</span>:
+	  <span class="enscript-keyword">case</span> <span class="enscript-string">'E'</span>:
+	    {
+		VALUE val = GETARG();
+		<span class="enscript-type">double</span> fval;
+		<span class="enscript-type">int</span> i, need = 6;
+		<span class="enscript-type">char</span> fbuf[32];
+
+		fval = RFLOAT(rb_Float(val))-&gt;value;
+#<span class="enscript-reference">if</span> <span class="enscript-reference">defined</span>(<span class="enscript-variable-name">_WIN32</span>) &amp;&amp; !<span class="enscript-reference">defined</span>(<span class="enscript-variable-name">__BORLANDC__</span>)
+		<span class="enscript-keyword">if</span> (isnan(fval) || isinf(fval)) {
+		    <span class="enscript-type">const</span> <span class="enscript-type">char</span> *expr;
+
+		    <span class="enscript-keyword">if</span>  (isnan(fval)) {
+			expr = <span class="enscript-string">"NaN"</span>;
+		    }
+		    <span class="enscript-keyword">else</span> {
+			expr = <span class="enscript-string">"Inf"</span>;
+		    }
+		    need = strlen(expr);
+		    <span class="enscript-keyword">if</span> ((!isnan(fval) &amp;&amp; fval &lt; 0.0) || (flags &amp; FPLUS))
+			need++;
+		    <span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FSPACE)
+			need++;
+		    <span class="enscript-keyword">if</span> ((flags &amp; FWIDTH) &amp;&amp; need &lt; width)
+			need = width;
+
+		    CHECK(need);
+		    sprintf(&amp;buf[blen], <span class="enscript-string">"%*s"</span>, need, <span class="enscript-string">""</span>);
+		    <span class="enscript-keyword">if</span> (flags &amp; FMINUS) {
+			<span class="enscript-keyword">if</span> (!isnan(fval) &amp;&amp; fval &lt; 0.0)
+			    buf[blen++] = <span class="enscript-string">'-'</span>;
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FPLUS)
+			    buf[blen++] = <span class="enscript-string">'+'</span>;
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FSPACE)
+			    blen++;
+			strncpy(&amp;buf[blen], expr, strlen(expr));
+		    }
+		    <span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FZERO) {
+			<span class="enscript-keyword">if</span> (!isnan(fval) &amp;&amp; fval &lt; 0.0) {
+			    buf[blen++] = <span class="enscript-string">'-'</span>;
+			    need--;
+			}
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FPLUS) {
+			    buf[blen++] = <span class="enscript-string">'+'</span>;
+			    need--;
+			}
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FSPACE) {
+			    blen++;
+			    need--;
+			}
+			<span class="enscript-keyword">while</span> (need-- - strlen(expr) &gt; 0) {
+			    buf[blen++] = <span class="enscript-string">'0'</span>;
+			}
+			strncpy(&amp;buf[blen], expr, strlen(expr));
+		    }
+		    <span class="enscript-keyword">else</span> {
+			<span class="enscript-keyword">if</span> (!isnan(fval) &amp;&amp; fval &lt; 0.0)
+			    buf[blen + need - strlen(expr) - 1] = <span class="enscript-string">'-'</span>;
+			<span class="enscript-keyword">else</span> <span class="enscript-keyword">if</span> (flags &amp; FPLUS)
+			    buf[blen + need - strlen(expr) - 1] = <span class="enscript-string">'+'</span>;
+			strncpy(&amp;buf[blen + need - strlen(expr)], expr,
+				strlen(expr));
+		    }
+		    blen += strlen(&amp;buf[blen]);
+		    <span class="enscript-keyword">break</span>;
+		}
+#<span class="enscript-reference">endif</span>	<span class="enscript-comment">/* defined(_WIN32) &amp;&amp; !defined(__BORLANDC__) */</span>
+		fmt_setup(fbuf, *p, flags, width, prec);
+		need = 0;
+		<span class="enscript-keyword">if</span> (*p != <span class="enscript-string">'e'</span> &amp;&amp; *p != <span class="enscript-string">'E'</span>) {
+		    i = INT_MIN;
+		    frexp(fval, &amp;i);
+		    <span class="enscript-keyword">if</span> (i &gt; 0)
+			need = BIT_DIGITS(i);
+		}
+		need += (flags&amp;FPREC) ? prec : 6;
+		<span class="enscript-keyword">if</span> ((flags&amp;FWIDTH) &amp;&amp; need &lt; width)
+		    need = width;
+		need += 20;
+
+		CHECK(need);
+		sprintf(&amp;buf[blen], fbuf, fval);
+		blen += strlen(&amp;buf[blen]);
+	    }
+	    <span class="enscript-keyword">break</span>;
+	}
+	flags = FNONE;
+    }
+
+  <span class="enscript-reference">sprint_exit</span>:
+    <span class="enscript-comment">/* XXX - We cannot validiate the number of arguments if (digit)$ style used.
+     */</span>
+    <span class="enscript-keyword">if</span> (posarg &gt;= 0 &amp;&amp; nextarg &lt; argc) {
+	<span class="enscript-type">const</span> <span class="enscript-type">char</span> *mesg = <span class="enscript-string">"too many arguments for format string"</span>;
+	<span class="enscript-keyword">if</span> (RTEST(ruby_debug)) rb_raise(rb_eArgError, mesg);
+	<span class="enscript-keyword">if</span> (RTEST(ruby_verbose)) rb_warn(mesg);
+    }
+    rb_str_resize(result, blen);
+
+    <span class="enscript-keyword">if</span> (tainted) OBJ_TAINT(result);
+    <span class="enscript-keyword">return</span> result;
+}
+
+<span class="enscript-type">static</span> <span class="enscript-type">void</span>
+<span class="enscript-function-name">fmt_setup</span>(buf, c, flags, width, prec)
+    <span class="enscript-type">char</span> *buf;
+    <span class="enscript-type">int</span> c;
+    <span class="enscript-type">int</span> flags, width, prec;
+{
+    *buf++ = <span class="enscript-string">'%'</span>;
+    <span class="enscript-keyword">if</span> (flags &amp; FSHARP) *buf++ = <span class="enscript-string">'#'</span>;
+    <span class="enscript-keyword">if</span> (flags &amp; FPLUS)  *buf++ = <span class="enscript-string">'+'</span>;
+    <span class="enscript-keyword">if</span> (flags &amp; FMINUS) *buf++ = <span class="enscript-string">'-'</span>;
+    <span class="enscript-keyword">if</span> (flags &amp; FZERO)  *buf++ = <span class="enscript-string">'0'</span>;
+    <span class="enscript-keyword">if</span> (flags &amp; FSPACE) *buf++ = <span class="enscript-string">' '</span>;
+
+    <span class="enscript-keyword">if</span> (flags &amp; FWIDTH) {
+	sprintf(buf, <span class="enscript-string">"%d"</span>, width);
+	buf += strlen(buf);
+    }
+
+    <span class="enscript-keyword">if</span> (flags &amp; FPREC) {
+	sprintf(buf, <span class="enscript-string">".%d"</span>, prec);
+	buf += strlen(buf);
+    }
+
+    *buf++ = c;
+    *buf = <span class="enscript-string">'\0'</span>;
+}
+</pre>
+<hr>
+</body></html>

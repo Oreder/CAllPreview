@@ -1,0 +1,3 @@
+C:\WINDOWS\syswow64\msvcrt.dll
+C:\WINDOWS\syswow64\kernel32.dll
+C:\WINDOWS\system32\ntdll.dll

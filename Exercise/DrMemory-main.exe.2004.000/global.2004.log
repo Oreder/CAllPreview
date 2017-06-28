@@ -1,0 +1,59 @@
+Dr. Memory version 1.9.0 build 4 built on Oct  2 2015 13:13:14
+start time: 3638307:05:18.484 == 03:05:18.484 01/22/2016
+Recorded 116 suppression(s) from default C:\Dr. Memory\bin\suppress-default.txt
+new thread #0 id=1352
+
+module load event: "main.exe" 0x00400000-0x00427000 modid: 1 Z:\src\Josephus\main.exe
+
+module load event: "dynamorio.dll" 0x71000000-0x7115a000 modid: 2 C:\Dr. Memory\dynamorio\lib32\release\dynamorio.dll
+
+module load event: "drmemorylib.dll" 0x73800000-0x739fd000 modid: 3 C:\Dr. Memory\bin\release\drmemorylib.dll
+
+module load event: "msvcrt.dll" 0x77ba0000-0x77bfa000 modid: 4 C:\WINDOWS\syswow64\msvcrt.dll
+WARNING: unable to load symbols for C:\WINDOWS\syswow64\msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+
+module load event: "KERNEL32.dll" 0x7d4c0000-0x7d5f0000 modid: 5 C:\WINDOWS\syswow64\kernel32.dll
+WARNING: unable to load symbols for C:\WINDOWS\syswow64\kernel32.dll
+
+module load event: "ntdll.dll" 0x7d600000-0x7d6f0000 modid: 6 C:\WINDOWS\system32\ntdll.dll
+WARNING: unable to load symbols for C:\WINDOWS\system32\ntdll.dll
+WARNING: unhandled system calls found
+
+DUPLICATE ERROR COUNTS:
+
+SUPPRESSIONS USED:
+	     2x (leaked      22 bytes): default i#599 mingw un-freed alloc A
+
+NO ERRORS FOUND:
+      0 unique,     0 total unaddressable access(es)
+      0 unique,     0 total uninitialized access(es)
+      0 unique,     0 total invalid heap argument(s)
+      0 unique,     0 total GDI usage error(s)
+      0 unique,     0 total handle leak(s)
+      0 unique,     0 total warning(s)
+      0 unique,     0 total,      0 byte(s) of leak(s)
+      0 unique,     0 total,      0 byte(s) of possible leak(s)
+ERRORS IGNORED:
+     73 ignored assumed-innocuous system leak(s)
+      0 unique,     0 total,      0 byte(s) of still-reachable allocation(s)
+         (re-run with "-show_reachable" for details)
+Details: Z:\src\Josephus\\DrMemory-main.exe.2004.000\results.txt
+
+DUPLICATE POTENTIAL ERROR COUNTS:
+
+NO POTENTIAL ERRORS FOUND:
+      0 unique,     0 total potential unaddressable access(es)
+      0 unique,     0 total potential uninitialized access(es)
+      0 unique,     0 total potential invalid heap argument(s)
+      0 unique,     0 total potential GDI usage error(s)
+      0 unique,     0 total potential handle leak(s)
+      0 unique,     0 total potential warning(s)
+      0 unique,     0 total,      0 byte(s) of potential leak(s)
+      0 unique,     0 total,      0 byte(s) of potential possible leak(s)
+Details: Z:\src\Josephus\\DrMemory-main.exe.2004.000\potential_errors.txt
+Exiting @0:00:05.719 in thread 1352
+LOG END

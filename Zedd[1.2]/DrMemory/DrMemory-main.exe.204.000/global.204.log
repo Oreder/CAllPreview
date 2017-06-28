@@ -1,0 +1,61 @@
+Dr. Memory version 1.9.0 build 0 built on Aug 28 2015 22:56:18
+start time: 3635907:40:15.784 == 03:40:15.784 10/14/2015
+Recorded 110 suppression(s) from default C:\Program Files (x86)\Dr. Memory\bin\suppress-default.txt
+new thread #0 id=1568
+
+module load event: "main.exe" 0x00400000-0x00416000 modid: 1 C:\Zedd\main.exe
+
+module load event: "dynamorio.dll" 0x6dea0000-0x6dffa000 modid: 2 C:\Program Files (x86)\Dr. Memory\dynamorio\lib32\release\dynamorio.dll
+
+module load event: "drmemorylib.dll" 0x73800000-0x739f6000 modid: 3 C:\Program Files (x86)\Dr. Memory\bin\release\drmemorylib.dll
+
+module load event: "msvcrt.dll" 0x76880000-0x7693e000 modid: 4 C:\WINDOWS\SYSTEM32\msvcrt.dll
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new == new[] => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+WARNING: new/delete has no local wrapper => disabling mismatch detection for msvcrt.dll
+
+module load event: "KERNELBASE.dll" 0x76950000-0x76ac6000 modid: 5 C:\WINDOWS\SYSTEM32\KERNELBASE.dll
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\KERNELBASE.dll
+
+module load event: "KERNEL32.dll" 0x76af0000-0x76be0000 modid: 6 C:\WINDOWS\SYSTEM32\KERNEL32.DLL
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\KERNEL32.DLL
+
+module load event: "ntdll.dll" 0x76f60000-0x770d9000 modid: 7 C:\WINDOWS\SYSTEM32\ntdll.dll
+WARNING: unable to load symbols for C:\WINDOWS\SYSTEM32\ntdll.dll
+WARNING: unhandled system calls found
+
+DUPLICATE ERROR COUNTS:
+
+SUPPRESSIONS USED:
+	     2x: default i#960 CRT mismatch
+	     2x (leaked      59 bytes): default i#599 mingw un-freed alloc A
+
+NO ERRORS FOUND:
+      0 unique,     0 total unaddressable access(es)
+      0 unique,     0 total uninitialized access(es)
+      0 unique,     0 total invalid heap argument(s)
+      0 unique,     0 total GDI usage error(s)
+      0 unique,     0 total handle leak(s)
+      0 unique,     0 total warning(s)
+      0 unique,     0 total,      0 byte(s) of leak(s)
+      0 unique,     0 total,      0 byte(s) of possible leak(s)
+Details: C:\Zedd\Second\\DrMemory-main.exe.204.000\results.txt
+
+DUPLICATE POTENTIAL ERROR COUNTS:
+
+NO POTENTIAL ERRORS FOUND:
+      0 unique,     0 total potential unaddressable access(es)
+      0 unique,     0 total potential uninitialized access(es)
+      0 unique,     0 total potential invalid heap argument(s)
+      0 unique,     0 total potential GDI usage error(s)
+      0 unique,     0 total potential handle leak(s)
+      0 unique,     0 total potential warning(s)
+      0 unique,     0 total,      0 byte(s) of potential leak(s)
+      0 unique,     0 total,      0 byte(s) of potential possible leak(s)
+Details: C:\Zedd\Second\\DrMemory-main.exe.204.000\potential_errors.txt
+Exiting @0:00:01.188 in thread 1568
+LOG END
